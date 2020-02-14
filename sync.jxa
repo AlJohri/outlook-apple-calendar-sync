@@ -188,11 +188,11 @@ function resolvePath(path) {
   if (path.startsWith("~/")) {
     path = App.pathTo("home folder") + path.substring(1);
   }
-  return path
+  return path;
 }
 
 function fileExists(path) {
-  path = resolvePath(path)
+  path = resolvePath(path);
   return $.NSFileManager.alloc.init.fileExistsAtPath(path);
 }
 
@@ -202,8 +202,8 @@ function readFile(path) {
 }
 
 function parseConfig() {
-  const CONFIG_FILE = '~/.config/outlook-apple-calendar-sync.json';
-  if (!fileExists(CONFIG_FILE)) return {}
+  const CONFIG_FILE = "~/.config/outlook-apple-calendar-sync.json";
+  if (!fileExists(CONFIG_FILE)) return {};
   return JSON.parse(readFile(CONFIG_FILE));
 }
 
@@ -246,7 +246,6 @@ function parseEnv() {
 }
 
 function main(argv, App) {
-
   log(`Synchronizing Outlook to Apple Calendar`);
 
   const defaultArgs = {
