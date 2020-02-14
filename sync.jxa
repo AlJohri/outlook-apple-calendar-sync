@@ -13,7 +13,7 @@ function any(iterable) {
   return false;
 }
 
-function getDefaultDateRange({daysAgo=7, daysAhead=7}) {
+function getDefaultDateRange({ daysAgo = 7, daysAhead = 7 }) {
   var endTime = new Date();
   var startTime = new Date(endTime);
   startTime.setDate(startTime.getDate() - daysAgo);
@@ -110,7 +110,7 @@ function getOrCreateEvent(Calendar, calendar, x) {
   let event;
 
   try {
-    event = calendar.events.whose({url: id})[0];
+    event = calendar.events.whose({ url: id })[0];
     event.get();
   } catch (e) {
     event = null;
@@ -125,7 +125,7 @@ function getOrCreateEvent(Calendar, calendar, x) {
       endDate: x.endTime(),
       description: x.plainTextContent(),
       alldayEvent: x.allDayFlag(),
-      location: x.location(),
+      location: x.location()
     });
     calendar.events.push(event);
   } else {
@@ -135,42 +135,40 @@ function getOrCreateEvent(Calendar, calendar, x) {
 }
 
 function camelCase(input) {
-    return input.toLowerCase().replace(/-(.)/g, function(match, group1) {
-        return group1.toUpperCase();
-    });
+  return input.toLowerCase().replace(/-(.)/g, function(match, group1) {
+    return group1.toUpperCase();
+  });
 }
 
 function parseArgs(argv) {
   const args = {};
   argv.forEach(arg => {
-    if (arg.startsWith('--')) {
+    if (arg.startsWith("--")) {
       arg = arg.substring(2);
       let flag = arg;
       let value = true;
       if (arg.includes("=")) {
-        [flag, value] = arg.split('=');
+        [flag, value] = arg.split("=");
       }
       flag = camelCase(flag);
       args[flag] = value;
     } else {
-      throw `Unknown arg: ${arg}`
+      throw `Unknown arg: ${arg}`;
     }
   });
   return args;
 }
 
-
 function main(argv) {
-
   defaultArgs = {
     outlookCalendarName: "Calendar",
     outlookCalendarIndex: "1",
     appleCalendarName: "Outlook Sync",
     daysAgo: 7,
-    daysAhead: 7,
-  }
+    daysAhead: 7
+  };
 
-  const args = {...defaultArgs, ...parseArgs(argv)};
+  const args = { ...defaultArgs, ...parseArgs(argv) };
   console.log(JSON.stringify(args, null, 2));
 
   const Outlook = Application("Microsoft Outlook");
@@ -184,7 +182,8 @@ function main(argv) {
   const calendar = getOrCreateCalendar(
     Calendar,
     args.appleCalendarName,
-    args.appleCalendarDescription || "");
+    args.appleCalendarDescription || ""
+  );
 
   const [startTime, endTime] = getDefaultDateRange({
     daysAgo: args.daysAgo,
@@ -210,7 +209,6 @@ function main(argv) {
   for (let event of events) {
     getOrCreateEvent(Calendar, calendar, event);
   }
-
 }
 
 function run(args) {
