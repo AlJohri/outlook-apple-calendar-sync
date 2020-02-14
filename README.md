@@ -1,22 +1,26 @@
 # outlook-apple-calendar-sync
 
-This script will synchronize some date range from your Outlook Calendar with the Apple Calendar.
+This script will synchronize Outlook Calendar with Apple Calendar.
 
 ## Quickstart
 
 ```
-./sync.jxa
+brew install AlJohri/-/outlook-apple-calendar-sync
+brew services start outlook-apple-calendar-sync
 ```
 
-If the defaults do not work for you, you can pass in the following options explicitly:
+This will automatically start running the script every minute. Check the logs to see if its working:
 
 ```
-./sync.jxa \
-    --outlook-calendar-name=Calendar \
-    --outlook-calendar-index=1 \
-    --apple-calendar-name="Outlook Sync" \
-    --days-ago=1 \
-    --days-ahead=7
+tail -f /usr/local/var/log/outlook-apple-calendar-sync.log
 ```
 
-The Outlook Calendar `name` and `index` may be different on your computer.
+If you are running into any errors, you can change the default options using the following environment variables:
+
+- 'OUTLOOK_CALENDAR_NAME'
+- 'OUTLOOK_CALENDAR_INDEX'
+- 'APPLE_CALENDAR_NAME'
+- 'DAYS_AGO'
+- 'DAYS_AHEAD'
+
+NOTE: The Outlook Calendar `name` and `index` may be different on your computer.

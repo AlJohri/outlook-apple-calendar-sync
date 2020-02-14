@@ -6,6 +6,8 @@ Usage: ./extract.jxa
 Outlook Object Model: https://docs.microsoft.com/en-us/office/vba/api/overview/outlook/object-model
 */
 
+ObjC.import('stdlib');
+
 class OutlookCalendar {
   constructor(calendarName, calendarIndex) {
     this.app = Application("Microsoft Outlook");
@@ -182,6 +184,25 @@ function parseArgs(argv) {
   return args;
 }
 
+function getEnv(env) {
+  try {
+    return $.getenv(env)
+  } catch(e) {
+    return null
+  }
+}
+
+function parseEnv() {
+  const envs = {
+    outlookCalendarName: getEnv('OUTLOOK_CALENDAR_NAME'),
+    outlookCalendarIndex: getEnv('OUTLOOK_CALENDAR_INDEX'),
+    appleCalendarName: getEnv('APPLE_CALENDAR_NAME'),
+    daysAgo: getEnv('DAYS_AGO'),
+    daysAhead: getEnv('DAYS_AHEAD'),
+  }
+  return Object.fromEntries(Object.entries(envs).filter(([k, v]) => v));
+}
+
 function main(argv) {
 
   log(`Synchronizing Outlook to Apple Calendar`)
@@ -194,7 +215,7 @@ function main(argv) {
     daysAhead: 7
   };
 
-  const args = { ...defaultArgs, ...parseArgs(argv) };
+  const args = { ...defaultArgs, ...parseEnv(), ...parseArgs(argv) };
 
   const {startTime, endTime} = getDateRange({
     daysAgo: args.daysAgo,
