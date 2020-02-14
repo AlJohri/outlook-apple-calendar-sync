@@ -149,7 +149,7 @@ class AppleCalendar {
 
     if (!event) {
       log(`Creating event ${id} ${x.subject()}`);
-      event = Calendar.Event({
+      event = this.app.Event({
         url: id,
         summary: x.subject(),
         startDate: x.startTime(),
