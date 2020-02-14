@@ -32,3 +32,10 @@ You can set any of the following options:
     "daysAhead": 7
 }
 ```
+
+## Start/Stop/Uninstall/Update
+
+- Start Service: `brew services start outlook-apple-calendar-sync`
+- Stop Service: `brew services stop outlook-apple-calendar-sync`
+- Uninstall: `brew uninstall outlook-apple-calendar-sync`
+- Update: `brew update && brew reinstall outlook-apple-calendar-sync`
