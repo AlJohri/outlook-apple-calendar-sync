@@ -276,8 +276,6 @@ function main(argv, App) {
   log(`Start Time: ${startTime} (${args.daysAgo} days ago)`);
   log(`End Time: ${endTime} (${args.daysAgo} days ahead)`);
 
-  $.exit(0);
-
   const outlookCalendar = new OutlookCalendar(
     args.outlookCalendarName,
     args.outlookCalendarIndex
