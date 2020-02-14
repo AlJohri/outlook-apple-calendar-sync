@@ -6,7 +6,27 @@ Usage: ./extract.jxa
 Outlook Object Model: https://docs.microsoft.com/en-us/office/vba/api/overview/outlook/object-model
 */
 
-ObjC.import('stdlib');
+ObjC.import("stdlib");
+
+// Polyfill (<= MacOS Mojave)
+if (!Object.fromEntries) {
+  Object.fromEntries = iterable => {
+    return [...iterable].reduce((obj, [key, val]) => {
+      obj[key] = val;
+      return obj;
+    }, {});
+  };
+}
+
+// Polyfill
+if (!Array.some) {
+  Array.some = iterable => {
+    for (var index = 0; index < iterable.length; index++) {
+      if (iterable[index]) return true;
+    }
+    return false;
+  };
+}
 
 class OutlookCalendar {
   constructor(calendarName, calendarIndex) {
@@ -64,7 +84,10 @@ class OutlookCalendar {
 
     if (blacklistPhrases.length > 0) {
       events = events.filter(
-        x => !any(blacklistPhrases.map(phrase => x.subject().includes(phrase)))
+        x =>
+          !Array.some(
+            blacklistPhrases.map(phrase => x.subject().includes(phrase))
+          )
       );
     }
 
@@ -141,14 +164,7 @@ class AppleCalendar {
 }
 
 function log(...args) {
-  console.log(`[${new Date()}]`, ...args)
-}
-
-function any(iterable) {
-  for (var index = 0; index < iterable.length; index++) {
-    if (iterable[index]) return true;
-  }
-  return false;
+  console.log(`[${new Date()}]`, ...args);
 }
 
 function getDateRange({ daysAgo, daysAhead }) {
@@ -156,7 +172,7 @@ function getDateRange({ daysAgo, daysAhead }) {
   var startTime = new Date(endTime);
   startTime.setDate(startTime.getDate() - daysAgo);
   endTime.setDate(endTime.getDate() + daysAhead);
-  return {startTime, endTime};
+  return { startTime, endTime };
 }
 
 function camelCase(input) {
@@ -186,26 +202,25 @@ function parseArgs(argv) {
 
 function getEnv(env) {
   try {
-    return $.getenv(env)
-  } catch(e) {
-    return null
+    return $.getenv(env);
+  } catch (e) {
+    return null;
   }
 }
 
 function parseEnv() {
   const envs = {
-    outlookCalendarName: getEnv('OUTLOOK_CALENDAR_NAME'),
-    outlookCalendarIndex: getEnv('OUTLOOK_CALENDAR_INDEX'),
-    appleCalendarName: getEnv('APPLE_CALENDAR_NAME'),
-    daysAgo: getEnv('DAYS_AGO'),
-    daysAhead: getEnv('DAYS_AHEAD'),
-  }
+    outlookCalendarName: getEnv("OUTLOOK_CALENDAR_NAME"),
+    outlookCalendarIndex: getEnv("OUTLOOK_CALENDAR_INDEX"),
+    appleCalendarName: getEnv("APPLE_CALENDAR_NAME"),
+    daysAgo: getEnv("DAYS_AGO"),
+    daysAhead: getEnv("DAYS_AHEAD")
+  };
   return Object.fromEntries(Object.entries(envs).filter(([k, v]) => v));
 }
 
 function main(argv) {
-
-  log(`Synchronizing Outlook to Apple Calendar`)
+  log(`Synchronizing Outlook to Apple Calendar`);
 
   const defaultArgs = {
     outlookCalendarName: "Calendar",
@@ -217,15 +232,17 @@ function main(argv) {
 
   const args = { ...defaultArgs, ...parseEnv(), ...parseArgs(argv) };
 
-  const {startTime, endTime} = getDateRange({
+  const { startTime, endTime } = getDateRange({
     daysAgo: args.daysAgo,
     daysAhead: args.daysAhead
   });
 
-  log(`Outlook Calendar: "${args.outlookCalendarName}" at Index [${args.outlookCalendarIndex}]`)
-  log(`Apple Calendar: "${args.appleCalendarName}"`)
-  log(`Start Time: ${startTime} (${args.daysAgo} days ago)`)
-  log(`End Time: ${endTime} (${args.daysAgo} days ahead)`)
+  log(
+    `Outlook Calendar: "${args.outlookCalendarName}" at Index [${args.outlookCalendarIndex}]`
+  );
+  log(`Apple Calendar: "${args.appleCalendarName}"`);
+  log(`Start Time: ${startTime} (${args.daysAgo} days ago)`);
+  log(`End Time: ${endTime} (${args.daysAgo} days ahead)`);
 
   const outlookCalendar = new OutlookCalendar(
     args.outlookCalendarName,
