@@ -1,12 +1,14 @@
 # outlook-apple-calendar-sync
 
+This script will synchronize some date range from your Outlook Calendar with the Apple Calendar.
+
 ## Quickstart
 
 ```
 ./sync.jxa
 ```
 
-The Outlook Calendar name and index may be different on your computer. For the index, if `1` doesn't work, you can try `0` or `2`, etc.
+If the defaults do not work for you, you can pass in the following options explicitly:
 
 ```
 ./sync.jxa \
@@ -16,3 +18,5 @@ The Outlook Calendar name and index may be different on your computer. For the i
     --days-ago=7 \
     --days-ahead=7
 ```
+
+The Outlook Calendar `name` and `index` may be different on your computer.
