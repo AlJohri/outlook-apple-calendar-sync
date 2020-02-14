@@ -15,7 +15,7 @@ If the defaults do not work for you, you can pass in the following options expli
     --outlook-calendar-name=Calendar \
     --outlook-calendar-index=1 \
     --apple-calendar-name="Outlook Sync" \
-    --days-ago=7 \
+    --days-ago=1 \
     --days-ahead=7
 ```
 

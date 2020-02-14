@@ -87,12 +87,12 @@ class AppleCalendar {
     try {
       calendar.get();
     } catch (e) {
-      console.log(`Calendar "${calendarName}" not found.`);
+      log(`Calendar "${calendarName}" not found.`);
       calendar = null;
     }
 
     if (!calendar) {
-      console.log(`Creating calendar: "${calendarName}"`);
+      log(`Creating calendar: "${calendarName}"`);
       calendar = this.app
         .Calendar({
           name: calendarName,
@@ -120,7 +120,7 @@ class AppleCalendar {
     }
 
     if (!event) {
-      console.log(`Creating event ${id} ${x.subject()}`);
+      log(`Creating event ${id} ${x.subject()}`);
       event = Calendar.Event({
         url: id,
         summary: x.subject(),
@@ -132,10 +132,14 @@ class AppleCalendar {
       });
       this.calendar.events.push(event);
     } else {
-      console.log(`Skipping event ${id} ${x.subject()}, already exists`);
+      log(`Skipping event ${id} ${x.subject()}, already exists`);
     }
     return event;
   }
+}
+
+function log(...args) {
+  console.log(`[${new Date()}]`, ...args)
 }
 
 function any(iterable) {
@@ -145,7 +149,7 @@ function any(iterable) {
   return false;
 }
 
-function getDateRange({ daysAgo = 7, daysAhead = 7 }) {
+function getDateRange({ daysAgo, daysAhead }) {
   var endTime = new Date();
   var startTime = new Date(endTime);
   startTime.setDate(startTime.getDate() - daysAgo);
@@ -180,18 +184,27 @@ function parseArgs(argv) {
 
 function main(argv) {
 
-  console.log("Synchronizing Outlook to Apple Calendar")
+  log(`Synchronizing Outlook to Apple Calendar`)
 
-  defaultArgs = {
+  const defaultArgs = {
     outlookCalendarName: "Calendar",
     outlookCalendarIndex: "1",
     appleCalendarName: "Outlook Sync",
-    daysAgo: 7,
+    daysAgo: 1,
     daysAhead: 7
   };
 
   const args = { ...defaultArgs, ...parseArgs(argv) };
-  console.log(JSON.stringify(args, null, 2));
+
+  const {startTime, endTime} = getDateRange({
+    daysAgo: args.daysAgo,
+    daysAhead: args.daysAhead
+  });
+
+  log(`Outlook Calendar: "${args.outlookCalendarName}" at Index [${args.outlookCalendarIndex}]`)
+  log(`Apple Calendar: "${args.appleCalendarName}"`)
+  log(`Start Time: ${startTime} (${args.daysAgo} days ago)`)
+  log(`End Time: ${endTime} (${args.daysAgo} days ahead)`)
 
   const outlookCalendar = new OutlookCalendar(
     args.outlookCalendarName,
@@ -203,11 +216,6 @@ function main(argv) {
     args.appleCalendarDescription || ""
   );
 
-  const {startTime, endTime} = getDateRange({
-    daysAgo: args.daysAgo,
-    daysAhead: args.daysAhead
-  });
-
   const events = outlookCalendar.getEvents({
     startTime,
     endTime,
@@ -217,9 +225,7 @@ function main(argv) {
     removeRecurrence: true
   });
 
-  console.log(
-    `${events.length} events found between ${startTime} and ${endTime}`
-  );
+  log(`${events.length} events found between ${startTime} and ${endTime}`);
 
   for (let event of events) {
     appleCalendar.getOrCreateEvent(event);
