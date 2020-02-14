@@ -1,0 +1,226 @@
+#!/usr/bin/osascript -l JavaScript
+
+/*
+Usage: ./extract.jxa
+
+Outlook Object Model: https://docs.microsoft.com/en-us/office/vba/api/overview/outlook/object-model
+*/
+
+function any(iterable) {
+  for (var index = 0; index < iterable.length; index++) {
+    if (iterable[index]) return true;
+  }
+  return false;
+}
+
+function getDefaultDateRange({daysAgo=7, daysAhead=7}) {
+  var endTime = new Date();
+  var startTime = new Date(endTime);
+  startTime.setDate(startTime.getDate() - daysAgo);
+  endTime.setDate(endTime.getDate() + daysAhead);
+  return [startTime, endTime];
+}
+
+function getOrCreateCalendar(Calendar, calendarName, calendarDescription) {
+  let calendar = Calendar.calendars.whose({ name: calendarName })[0];
+  try {
+    calendar.get();
+  } catch (e) {
+    console.log(`Calendar "${calendarName}" not found.`);
+    calendar = null;
+  }
+
+  if (!calendar) {
+    console.log(`Creating calendar: "${calendarName}"`);
+    calendar = Calendar.Calendar({
+      name: calendarName,
+      description: calendarDescription
+    }).make();
+  }
+
+  if (calendar.name() != calendarName) {
+    throw "Something is wrong";
+  }
+
+  return calendar;
+}
+
+function getOutlookEvents({
+  Outlook,
+  calendarName,
+  calendarIndex,
+  startTime = null,
+  endTime = null,
+  removeAllDay = true,
+  removeMultiDay = true,
+  removeRecurrence = true,
+  blacklistPhrases = []
+}) {
+  const calendar = Outlook.calendars.whose({ name: calendarName })[
+    calendarIndex
+  ];
+
+  try {
+    calendar.get();
+  } catch (e) {
+    throw `Could not find an Outlook calendar with name "${calendarName}" at index "${calendarIndex}".`;
+  }
+
+  if (calendar.calendarEvents().length === 0) {
+    throw `Calendar "${calendarName} at index "${calendarIndex}" exists but has 0 events.`;
+  }
+
+  let critera = null;
+  if (startTime || endTime) {
+    let range = [];
+    if (startTime) range.push({ startTime: { _greaterThan: startTime } });
+    if (endTime) range.push({ endTime: { _lessThan: endTime } });
+    critera = { _and: range };
+  }
+
+  let events = critera
+    ? calendar.calendarEvents.whose(critera)()
+    : calendar.calendarEvents();
+
+  if (removeAllDay) {
+    events = events.filter(x => !x.allDayFlag());
+  }
+
+  if (removeMultiDay) {
+    const ONE_DAY = 24 * 60 * 60;
+    events = events.filter(x => (x.endTime() - x.startTime()) / 1000 < ONE_DAY);
+  }
+
+  if (removeRecurrence) {
+    // only keep occurance
+    events = events.filter(x => !x.isRecurring());
+  }
+
+  if (blacklistPhrases.length > 0) {
+    events = events.filter(
+      x => !any(blacklistPhrases.map(phrase => x.subject().includes(phrase)))
+    );
+  }
+
+  return events;
+}
+
+function getOrCreateEvent(Calendar, calendar, x) {
+  const id = x.id().toString();
+  let event;
+
+  try {
+    event = calendar.events.whose({url: id})[0];
+    event.get();
+  } catch (e) {
+    event = null;
+  }
+
+  if (!event) {
+    console.log(`Creating event ${id} ${x.subject()}`);
+    event = Calendar.Event({
+      url: id,
+      summary: x.subject(),
+      startDate: x.startTime(),
+      endDate: x.endTime(),
+      description: x.plainTextContent(),
+      alldayEvent: x.allDayFlag(),
+      location: x.location(),
+    });
+    calendar.events.push(event);
+  } else {
+    console.log(`Skipping event ${id} ${x.subject()}, already exists`);
+  }
+  return event;
+}
+
+function camelCase(input) {
+    return input.toLowerCase().replace(/-(.)/g, function(match, group1) {
+        return group1.toUpperCase();
+    });
+}
+
+function parseArgs(argv) {
+  const args = {};
+  argv.forEach(arg => {
+    if (arg.startsWith('--')) {
+      arg = arg.substring(2);
+      let flag = arg;
+      let value = true;
+      if (arg.includes("=")) {
+        [flag, value] = arg.split('=');
+      }
+      flag = camelCase(flag);
+      args[flag] = value;
+    } else {
+      throw `Unknown arg: ${arg}`
+    }
+  });
+  return args;
+}
+
+
+function main(argv) {
+
+  defaultArgs = {
+    outlookCalendarName: "Calendar",
+    outlookCalendarIndex: "1",
+    appleCalendarName: "Outlook Sync",
+    daysAgo: 7,
+    daysAhead: 7,
+  }
+
+  const args = {...defaultArgs, ...parseArgs(argv)};
+  console.log(JSON.stringify(args, null, 2));
+
+  const Outlook = Application("Microsoft Outlook");
+  const Calendar = Application("Calendar");
+
+  if (!Calendar.running()) {
+    Calendar.launch();
+    delay(1);
+  }
+
+  const calendar = getOrCreateCalendar(
+    Calendar,
+    args.appleCalendarName,
+    args.appleCalendarDescription || "");
+
+  const [startTime, endTime] = getDefaultDateRange({
+    daysAgo: args.daysAgo,
+    daysAhead: args.daysAhead
+  });
+
+  const events = getOutlookEvents({
+    Outlook,
+    calendarName: args.outlookCalendarName,
+    calendarIndex: parseInt(args.outlookCalendarIndex),
+    startTime,
+    endTime,
+    blacklistPhrases: ["Appt"],
+    removeAllDay: true,
+    removeMultiDay: true,
+    removeRecurrence: true
+  });
+
+  console.log(
+    `${events.length} events found between ${startTime} and ${endTime}`
+  );
+
+  for (let event of events) {
+    getOrCreateEvent(Calendar, calendar, event);
+  }
+
+}
+
+function run(args) {
+  const App = Application.currentApplication();
+  App.includeStandardAdditions = true;
+
+  try {
+    main(args);
+  } catch (e) {
+    App.displayAlert(e.toString());
+    throw e;
+  }
+}
