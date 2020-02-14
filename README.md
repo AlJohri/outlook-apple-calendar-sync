@@ -15,6 +15,7 @@ This will automatically start running the script every minute. Check the logs to
 tail -f /usr/local/var/log/outlook-apple-calendar-sync.log
 ```
 
+<!--
 If you are running into any errors, you can change the default options using the following environment variables:
 
 - 'OUTLOOK_CALENDAR_NAME'
@@ -24,3 +25,4 @@ If you are running into any errors, you can change the default options using the
 - 'DAYS_AHEAD'
 
 NOTE: The Outlook Calendar `name` and `index` may be different on your computer.
+-->
