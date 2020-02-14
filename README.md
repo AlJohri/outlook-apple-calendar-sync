@@ -1,6 +1,6 @@
 # outlook-apple-calendar-sync
 
-This script will synchronize Outlook Calendar with Apple Calendar.
+This script will synchronize your Outlook Calendar with Apple Calendar.
 
 ## Quickstart
 
@@ -15,14 +15,20 @@ This will automatically start running the script every minute. Check the logs to
 tail -f /usr/local/var/log/outlook-apple-calendar-sync.log
 ```
 
-<!--
-If you are running into any errors, you can change the default options using the following environment variables:
+## Configuration
 
-- 'OUTLOOK_CALENDAR_NAME'
-- 'OUTLOOK_CALENDAR_INDEX'
-- 'APPLE_CALENDAR_NAME'
-- 'DAYS_AGO'
-- 'DAYS_AHEAD'
+The Outlook Calendar `name` and `index` may be different on your computer.
 
-NOTE: The Outlook Calendar `name` and `index` may be different on your computer.
--->
+If you are running into any errors, you can change the default options using the a configuration file at `'~/.config/outlook-apple-calendar-sync.json'`.
+
+You can set any of the following options:
+
+```
+{
+    "outlookCalendarName": "Calendar",
+    "outlookCalendarIndex": "1",
+    "appleCalendarName": "Outlook Sync",
+    "daysAgo": 1,
+    "daysAhead": 7
+}
+```

@@ -8,6 +8,9 @@ Outlook Object Model: https://docs.microsoft.com/en-us/office/vba/api/overview/o
 
 ObjC.import("stdlib");
 
+const App = Application.currentApplication();
+App.includeStandardAdditions = true;
+
 // Polyfill (<= MacOS Mojave)
 if (!Object.fromEntries) {
   Object.fromEntries = iterable => {
@@ -181,6 +184,29 @@ function camelCase(input) {
   });
 }
 
+function resolvePath(path) {
+  if (path.startsWith("~/")) {
+    path = App.pathTo("home folder") + path.substring(1);
+  }
+  return path
+}
+
+function fileExists(path) {
+  path = resolvePath(path)
+  return $.NSFileManager.alloc.init.fileExistsAtPath(path);
+}
+
+function readFile(path) {
+  path = resolvePath(path).toString();
+  return App.read(Path(path));
+}
+
+function parseConfig() {
+  const CONFIG_FILE = '~/.config/outlook-apple-calendar-sync.json';
+  if (!fileExists(CONFIG_FILE)) return {}
+  return JSON.parse(readFile(CONFIG_FILE));
+}
+
 function parseArgs(argv) {
   const args = {};
   argv.forEach(arg => {
@@ -219,22 +245,28 @@ function parseEnv() {
   return Object.fromEntries(Object.entries(envs).filter(([k, v]) => v));
 }
 
-function main(argv) {
+function main(argv, App) {
+
   log(`Synchronizing Outlook to Apple Calendar`);
 
   const defaultArgs = {
     outlookCalendarName: "Calendar",
     outlookCalendarIndex: "1",
     appleCalendarName: "Outlook Sync",
-    daysAgo: 1,
-    daysAhead: 7
+    daysAgo: "1",
+    daysAhead: "7"
   };
 
-  const args = { ...defaultArgs, ...parseEnv(), ...parseArgs(argv) };
+  const args = {
+    ...defaultArgs,
+    ...parseConfig(),
+    ...parseEnv(),
+    ...parseArgs(argv)
+  };
 
   const { startTime, endTime } = getDateRange({
-    daysAgo: args.daysAgo,
-    daysAhead: args.daysAhead
+    daysAgo: parseInt(args.daysAgo),
+    daysAhead: parseInt(args.daysAhead)
   });
 
   log(
@@ -243,6 +275,8 @@ function main(argv) {
   log(`Apple Calendar: "${args.appleCalendarName}"`);
   log(`Start Time: ${startTime} (${args.daysAgo} days ago)`);
   log(`End Time: ${endTime} (${args.daysAgo} days ahead)`);
+
+  $.exit(0);
 
   const outlookCalendar = new OutlookCalendar(
     args.outlookCalendarName,
@@ -271,11 +305,8 @@ function main(argv) {
 }
 
 function run(args) {
-  const App = Application.currentApplication();
-  App.includeStandardAdditions = true;
-
   try {
-    main(args);
+    main(args, App);
   } catch (e) {
     App.displayAlert(e.toString());
     throw e;
